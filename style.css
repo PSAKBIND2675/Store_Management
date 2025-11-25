@@ -1,0 +1,114 @@
+body {
+     font-family: Arial;
+     margin: 0;
+     padding: 0;
+     color:#060606;
+     background-color:rgb(44, 48, 44);
+    }
+nav {
+     background:#83cc0ef0;
+     display: flex;
+     height: 100px;
+    }
+#entrySpace{
+  background-image: url('watermark.jpg.png');  /*add image path of background image*/
+     background-size: 50%;
+     background-repeat: no-repeat;
+     background-position: center;  
+     background-color:rgb(150, 225, 135);
+}
+#navAdd , #navSell , #navStocks , #navRecent {
+     flex: 1; padding: 15px;
+     color: rgb(60, 103, 174);
+     font-weight: bold;
+     border: solid 5px rgb(44, 48, 44);
+     cursor: pointer;
+     background-position: center;
+     background-color:rgb(25, 130, 200);
+    }
+#navAdd{
+       background-image: url('addmedicine.png');  /*add image path of nav. bar inactive from*/
+     background-size: contain;
+     background-repeat: no-repeat;
+}
+#navSell{
+       background-image: url('sellmedicine.png');  /*add image path of nav. bar inactive from*/
+     background-size: contain;
+     background-repeat: no-repeat;
+}
+#navStocks{
+       background-image: url('stock.png');  /*add image path of nav. bar inactive from*/
+     background-size: contain;
+     background-repeat: no-repeat;
+}
+#navRecent{
+       background-image: url('recent.png');  /*add image path of nav. bar inactive from*/
+     background-size: contain;
+     background-repeat: no-repeat;
+}
+#navAdd.active , #navSell.active ,
+#navStocks.active , #navRecent.active{
+  border-bottom: none;
+}
+section {
+     display: none;
+     padding: 1px;
+    }
+section.active {
+     display: block;
+    }
+input, select {
+     margin: 5px;
+     padding: 5px;
+    }
+table {
+     width: 100%;
+     border-collapse: collapse;
+     margin-top: 10px;
+    }
+th, td {
+     border: 2px solid #9fa397;
+     padding: 8px;
+     text-align: left;
+    }
+#matchList {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  z-index: 1000;
+}
+
+#matchList .dropdown-item {
+  padding: 8px;
+  cursor: pointer;
+}
+
+#matchList .dropdown-item.active,
+#matchList .dropdown-item:hover {
+  background-color: #007BFF;
+  color: #fff;
+}
+
+#sellMatchList {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  z-index: 1000;
+}
+
+#sellMatchList .dropdown-item {
+  padding: 8px;
+  cursor: pointer;
+}
+
+#sellMatchList .dropdown-item.active,
+#sellMatchList .dropdown-item:hover {
+  background-color: #007BFF;
+  color: #fff;
+}

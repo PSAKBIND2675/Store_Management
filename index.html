@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Medical Store Management</title>
+  <link rel="stylesheet" href="style.css">     <!-- this attach css file for design -->
+</head>
+<body>
+   <!-- Logo banner at top -->
+    <div style="width:100vm; height:auto; margin-bottom:0px; border: solid 5px rgb(44, 48, 44);">
+      <img src="logo.jpg.png" alt="Store Logo" 
+           style="width:100%; height:100%;">
+    </div>
+<!-- navigagation bar -->
+<div style="width:100vm; height:auto; margin-bottom:0px; margin-top:0px;">
+ <nav>
+  <button id="navAdd" onclick="showTab('add')" class="active"></button>
+  <button id="navSell" onclick="showTab('sell')"></button>
+  <button id="navStocks" onclick="showTab('stock')"></button>
+  <button id="navRecent" onclick="showTab('recent')"></button>
+ </nav>
+</div>
+<div id="entrySpace" style="width:100vm; min-height:100vmax; height:auto; margin-bottom:0px; margin-top:0px; border: solid 5px rgb(44, 48, 44); border-top:none;">
+<!-- for add medicine tab -->
+<section id="add" class="active">
+  <h1 style="font-family: Algerian; text-align: center;"><b><u>ADD MEDICINE</u></b></h1>
+  <b>Enter Medicine Name : </b>
+  <!-- Product Name Input -->
+  <input type="text" id="addName" placeholder="Enter Medicine Name" oninput="showMatchingProducts()" autocomplete="off" />
+  <!-- Matching Dropdown -->
+  <div id="matchList"></div>
+  <!-- Price and Quantity Inputs -->
+  <b>Enter Price :</b>
+  <input id="addPrice" type="number" placeholder="Enter Price" /><br>
+  <b>Enter Quantity :</b>
+  <input id="addQty" type="number" placeholder="Enter Quantity" />
+  <!-- Add Button -->
+  <b>Click to Add :</b>
+  <button onclick="addProduct()">Add</button>
+</section>
+<!-- for sell medicine tab -->
+<section id="sell">
+  <h1 style="font-family: Algerian; text-align: center;"><b><u>SELL MEDICINE</u></b></h1>
+  <h2><u>Patient's Details</u></h2>
+  <h4>Enter Patient Details :</h4>
+  <!--for customer details Input -->
+  <b>Reciet No. :  </b>
+  <input id="receiptNo" placeholder="Receipt No." />
+  <b>Patient Name   :  </b>
+  <input id="custName" placeholder="Patient Name" /><br>
+  <b>Patient Age :  </b>
+  <input id="custAge" type="number" placeholder="Age" />
+  <b>Patient Sex :</b>
+  <!-- for selection of gender -->
+  <select id="custGender">
+    <option value="--">Select Gender</option>
+    <option value="M">Male</option>
+    <option value="F">Female</option>
+    <option value="O">Other</option>
+  </select>
+  <!-- for add medicine in cart -->
+  <h2><u>Medicine List :</u></h2>
+  Medicine Name:
+  <!-- Search box + dropdown -->
+   <input type="text" id="sellSearch" placeholder="Enter Medicine Name" oninput="showMatchingSellProducts()" autocomplete="off" />
+
+    <!-- Dropdown list for matches -->
+    <div id="sellMatchList"></div>
+  Quantity:
+  <select id="sellSelect" size="5" style="width:100%; margin-top:5px; display:none;" onchange="selectMedicine()"></select>
+  <input id="sellQty" type="number" placeholder="Enter Quantity"/>
+  <button onclick="addToCart()">Add to Cart</button>
+  <h3><u>Selected Items in Cart :</u></h3>
+  <table id="cartTable">
+    <tr><th>Sr.No.</th><th>Medicine Name</th><th>Qty.</th><th>Price/Qty.</th><th>Total</th><th>Remove</th></tr> 
+  </table>
+  <p><strong>Total: ₹<span id="cartTotal">0</span></strong></p>
+  <!-- for discount feature -->
+  <h3><u>Discount :</u></h3>
+  <b>Enter Discount Per.(%) :</b>
+  <input id="discountPercent" type="number" placeholder="Discount % (e.g. 5)" />
+  <b>Or value (₹) :</b>
+  <input id="discountValue" type="number" placeholder="Discount ₹" /> <br>
+  <label for="paymentMethod"><strong>Payment Mode :</strong></label>
+  <select id="paymentMethod">
+    <option value="Cash">Cash</option>
+    <option value="Online">Online</option>
+  </select>
+  <!-- for generate bill option -->
+  <button onclick="finalizeSale()">Generate Bill & Print Slip</button>
+  <!-- for generate reciet -->
+  <div id="receiptArea" style="display:none; margin-top:20px; border:1px solid #ccc; padding:10px; background:#f9f9f9;"></div>
+  <button onclick="printReceipt()" style="display:none;" id="printBtn">🖨️ Print Receipt</button>
+</section>
+<!-- for stock tab -->
+<section id="stock">
+  <h1 style="font-family: Algerian; text-align: center;"> <b><u> STOCK </u></b></h1>
+  <table id="stockTable">
+    <tr><th>Sr.No.</th><th>Medicine Name</th><th>Price/Qty.</th><th>Qty.</th><th>Recent Update</th></tr>
+  </table>
+</section>
+<!-- for recent 100 bill tab -->
+<section id="recent">
+  <H1 style="font-family: Algerian; text-align: center;"><u>RECENT SELLS</u></B></H1>
+  <table id="recentTable">
+    <tr><th>Receipt No.</th><th>Patient Name</th><th>Date & Time</th><th>Subtotal</th><th>Discount</th><th>Total Paid</th><th>Payment Mode</th><th>View</th></tr>
+  </table>
+</section>
+</div>
+<!--for toast message-->
+<div id="toast" style="
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #08d3e5;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  display: none;
+  font-weight: bold;
+"></div>
+<!-- for creating qr popup -->
+<div id="qrPopup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
+background:#fff; border:2px solid #333; padding:20px; z-index:1000; box-shadow:0 0 10px rgba(0,0,0,0.5);">
+<!-- for cancel payment or close qrpopup option-->
+<span onclick="closeQrPopup()" style="cursor:pointer; float:right; font-weight:bold;">✖</span>
+<div id="qrPopupContent"></div>
+<!-- for confermation button on qrpopup -->
+<button onclick="confirmOnlinePayment()">✅ Payment Done</button>
+</div>
+<script src="script.js"></script>       <!-- adding javascript file-->
+</body>
+</html>
