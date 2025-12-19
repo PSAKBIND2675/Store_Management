@@ -112,3 +112,20 @@ th, td {
   background-color: #007BFF;
   color: #fff;
 }
+footer{
+  border:5px solid black;
+  background-color: rgb(78, 67, 67);
+  color:white;
+}
+#ftop{
+  display:flex;
+}
+#fright,#fleft{
+  flex:1;
+  padding-left:20px;
+  line-height: 1.5;
+}
+#fbottom{
+  text-align: center;
+  line-height: 1;
+}

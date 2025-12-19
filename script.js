@@ -579,7 +579,7 @@ function generateReceiptHTML(sale) {
       <!-- Logo banner at top -->
     <div style="width:100vm; height:auto; margin-bottom:15px;">
       <img src="logo.jpg.png" alt="Store Logo" 
-           style="width:100%; height:auto; object-fit:cover;">
+           style="width:100%; height:auto; object-fit:cover; border:solid 5px black;">
     </div>
     <div style="position: relative; width: 100%; padding: 0;margin-bottom:15px;">
 
@@ -692,7 +692,7 @@ function printReceipt() {
   const html = receiptArea.innerHTML; // get receipt HTML
 
   // Open popup window
-  const w = window.open("", "_blank", "width=700,height=600");
+  const w = window.open("", "_blank", "width=auto,height=auto");
   w.document.write("<html><head><title>Receipt</title></head><body>");
   w.document.write(html);
   w.document.write("</body></html>");
