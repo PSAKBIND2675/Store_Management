@@ -724,7 +724,7 @@ function clearReceiptOnInput() {
   }
 }
 
-
+/*
 
 // ----------------- UPDATE STOCKS -----------------
 function updateStock() {
@@ -762,7 +762,7 @@ function updateRecent() {
     row.insertCell().appendChild(btn);
   });
 }
-
+*/
 // 🔹 Show receipt in popup window when viewing history
 function showHistory(index) {
   const sale = sales[index]; // get sale object
@@ -775,3 +775,403 @@ function showHistory(index) {
   w.document.write("</body></html>");
   w.document.close();
 }
+
+// ------------------ GLOBAL STATE ------------------
+let currentStockPage = 1;
+let currentRecentPage = 1;
+const rowsPerPage = 2;
+
+let stockSearchActive = false;
+let recentSearchActive = false;
+let stockFilteredEntries = null;
+let recentFilteredResults = null;
+
+
+// ------------------ DATE NORMALIZER ------------------
+// Convert "dd/mm/yyyy, hh:mm:ss" or "dd/mm/yyyy" into "yyyy-mm-dd hh:mm:ss"
+function normalizeForSearch(localDateStr) {
+  if (!localDateStr) return null;
+  const parts = localDateStr.split(",");
+  const datePart = parts[0].trim(); // dd/mm/yyyy
+  const timePart = parts[1] ? parts[1].trim() : "00:00:00"; // hh:mm:ss or default midnight
+
+  const [day, month, year] = datePart.split("/").map(Number);
+  return `${year}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")} ${timePart}`;
+}
+
+
+// ------------------ CLEAR FUNCTIONS ------------------
+function clearStockFilters() {
+  document.getElementById("stocksearch").value = "";
+  document.getElementById("stockdate").value = "";
+  document.getElementById("stockSort").value = "timeDesc"; // default newest
+  currentStockPage = 1;
+
+  stockSearchActive = false;
+  stockFilteredEntries = null;
+
+  updateStock();
+}
+
+function clearRecentFilters() {
+  document.getElementById("patientsearch").value = "";
+  document.getElementById("recentSort").value = "timeDesc"; // default newest
+  currentRecentPage = 1;
+
+  recentSearchActive = false;
+  recentFilteredResults = null;
+
+  updateRecent();
+}
+
+
+// ------------------ SEARCH BUTTON WRAPPERS ------------------
+function searchstock() {
+  currentStockPage = 1;
+
+  const nameQuery = document.getElementById("stocksearch").value.trim().toLowerCase();
+  const dateQuery = document.getElementById("stockdate").value; // YYYY-MM-DD
+
+  let entries = Object.entries(products);
+
+  stockFilteredEntries = entries.filter(([name, product]) => {
+    const matchName = nameQuery ? name.toLowerCase().includes(nameQuery) : true;
+    let matchDate = true;
+
+    if (dateQuery) {
+      const normalized = normalizeForSearch(product.lastUpdated); // "yyyy-mm-dd hh:mm:ss"
+      const storedDateOnly = normalized.split(" ")[0];           // "yyyy-mm-dd"
+      matchDate = storedDateOnly === dateQuery;
+    }
+
+    if (nameQuery && dateQuery) return matchName && matchDate;
+    if (nameQuery) return matchName;
+    if (dateQuery) return matchDate;
+    return true;
+  });
+
+  stockSearchActive = !!(nameQuery || dateQuery);
+
+  document.getElementById("stocksearch").value = "";
+  document.getElementById("stockdate").value = "";
+
+  updateStock();
+}
+
+function searchpatient() {
+  currentRecentPage = 1;
+
+  const query = document.getElementById("patientsearch").value.trim();
+  let results = [...sales];
+
+  if (query) {
+    if (/^\d+$/.test(query)) {
+      // Only digits → match receipt number
+      recentFilteredResults = results.filter(sale => String(sale.receiptNo).includes(query));
+    } else {
+      // Text or text+digits → match patient name
+      recentFilteredResults = results.filter(sale =>
+        (sale.customer?.name || "").toLowerCase().includes(query.toLowerCase())
+      );
+    }
+    recentSearchActive = true;
+  } else {
+    recentFilteredResults = null;
+    recentSearchActive = false;
+  }
+
+  document.getElementById("patientsearch").value = "";
+
+  updateRecent();
+}
+
+
+// ------------------ UPDATE STOCK ------------------
+function updateStock() {
+  const table = document.getElementById("stockTable");
+  table.innerHTML = "<tr><th>Sr.No.</th><th>Medicine Name</th><th>Price/Qty.</th><th>Qty.</th><th>Recent Update</th></tr>";
+
+  const sortOption = document.getElementById("stockSort")?.value || "timeDesc";
+
+  let entries = stockSearchActive && Array.isArray(stockFilteredEntries)
+    ? [...stockFilteredEntries]
+    : Object.entries(products);
+
+  if (entries.length === 0) {
+    document.getElementById("stockSortContainer").style.display = "none";
+    const row = table.insertRow();
+    const cell = row.insertCell();
+    cell.colSpan = 5;
+    cell.textContent = "No records found";
+    cell.style.textAlign = "center";
+    renderPagination("stockPagination", 0, () => {}, 0);
+    return;
+  }
+
+  document.getElementById("stockSortContainer").style.display = "block";
+
+  entries.sort((a, b) => {
+    const [nameA, productA] = a;
+    const [nameB, productB] = b;
+    switch (sortOption) {
+      case "nameAsc": return nameA.localeCompare(nameB);
+      case "nameDesc": return nameB.localeCompare(nameA);
+      case "timeAsc": {
+        const tsA = new Date(normalizeForSearch(productA.lastUpdated)).getTime();
+        const tsB = new Date(normalizeForSearch(productB.lastUpdated)).getTime();
+        return tsA - tsB; // oldest first
+      }
+      case "timeDesc": {
+        const tsA = new Date(normalizeForSearch(productA.lastUpdated)).getTime();
+        const tsB = new Date(normalizeForSearch(productB.lastUpdated)).getTime();
+        return tsB - tsA; // newest first
+      }
+    }
+  });
+
+  const totalPages = Math.ceil(entries.length / rowsPerPage);
+  renderPagination("stockPagination", totalPages, (page) => {
+    currentStockPage = page;
+    updateStock();
+  }, currentStockPage);
+
+  const start = (currentStockPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const pageEntries = entries.slice(start, end);
+
+  let sr = start + 1;
+  pageEntries.forEach(([name, product]) => {
+    const row = table.insertRow();
+    row.insertCell().textContent = sr++;
+    row.insertCell().textContent = name;
+    row.insertCell().textContent = `₹${product.price}`;
+    row.insertCell().textContent = product.qty;
+    row.insertCell().textContent = product.lastUpdated || "—";
+  });
+}
+
+
+// ------------------ UPDATE RECENT ------------------
+function updateRecent() {
+  const table = document.getElementById("recentTable");
+  table.innerHTML = "<tr><th>Sr.No.</th><th>Receipt No.</th><th>Patient Name</th><th>Date & Time</th><th>Subtotal</th><th>Discount</th><th>Total Paid</th><th>Payment Mode</th><th>View</th></tr>";
+
+  const sortOption = document.getElementById("recentSort")?.value || "timeDesc";
+
+  let results = recentSearchActive && Array.isArray(recentFilteredResults)
+    ? [...recentFilteredResults]
+    : [...sales];
+
+  if (results.length === 0) {
+    document.getElementById("recentSortContainer").style.display = "none";
+    const row = table.insertRow();
+    const cell = row.insertCell();
+    cell.colSpan = 9;
+    cell.textContent = "No records found";
+    cell.style.textAlign = "center";
+    renderPagination("recentPagination", 0, () => {}, 0);
+    return;
+  }
+
+  document.getElementById("recentSortContainer").style.display = "block";
+
+  results.sort((a, b) => {
+    switch (sortOption) {
+      case "nameAsc": return (a.customer?.name || "").localeCompare(b.customer?.name || "");
+      case "nameDesc": return (b.customer?.name || "").localeCompare(a.customer?.name || "");
+      case "timeAsc": {
+        const tsA = new Date(normalizeForSearch(a.time)).getTime();
+        const tsB = new Date(normalizeForSearch(b.time)).getTime();
+        return tsA - tsB;
+      }
+      case "timeDesc": {
+        const tsA = new Date(normalizeForSearch(a.time)).getTime();
+        const tsB = new Date(normalizeForSearch(b.time)).getTime();
+        return tsB - tsA;
+      }
+      case "receiptAsc": return (a.receiptNo || 0) - (b.receiptNo || 0);
+      case "receiptDesc": return (b.receiptNo || 0) - (a.receiptNo || 0);
+    }
+  });
+
+  const totalPages = Math.ceil(results.length / rowsPerPage);
+  renderPagination("recentPagination", totalPages, (page) => {
+    currentRecentPage = page;
+    updateRecent();
+  }, currentRecentPage);
+
+  const start = (currentRecentPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const pageResults = results.slice(start, end);
+
+  let sr = start + 1;
+  pageResults.forEach((sale, i) => {
+    const row = table.insertRow();
+
+    // Sr.No.
+    row.insertCell().textContent = sr++;
+
+    // Receipt No.
+    row.insertCell().textContent = sale.receiptNo || "—";
+
+    // Patient Name
+    row.insertCell().textContent = sale.customer?.name || "—";
+
+    // Date & Time (normalized)
+    row.insertCell().textContent = normalizeForSearch(sale.time);
+
+    // Subtotal (total + discount)
+    row.insertCell().textContent = `₹${(sale.total || 0) + (sale.discount || 0)}`;
+
+    // Discount
+    row.insertCell().textContent = `₹${sale.discount || 0}`;
+
+    // Total Paid
+    row.insertCell().textContent = `₹${sale.total || 0}`;
+
+    // Payment Mode
+    row.insertCell().textContent = sale.paymentMode || "—";
+
+    // View button
+    const btn = document.createElement("button");
+    btn.textContent = "View";
+    btn.onclick = () => showHistory(i);
+    row.insertCell().appendChild(btn);
+  });
+}
+function renderPagination(containerId, totalPages, updateFn, currentPage) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = "";
+
+  const effectivePage = totalPages === 0 ? 0 : currentPage;
+
+  const wrapper = document.createElement("div");
+  wrapper.style.display = "flex";
+  wrapper.style.justifyContent = "space-between";
+  wrapper.style.alignItems = "center";
+  wrapper.style.marginTop = "10px";
+
+  const infoBox = document.createElement("div");
+  infoBox.textContent = `Page ${effectivePage} of ${totalPages}`;
+  infoBox.style.border = "1px solid #000";
+  infoBox.style.padding = "5px 10px";
+  infoBox.style.fontWeight = "bold";
+  wrapper.appendChild(infoBox);
+
+  const navBox = document.createElement("div");
+
+  const prevBtn = document.createElement("button");
+  prevBtn.textContent = "Previous";
+  prevBtn.style.margin = "0 5px";
+  prevBtn.style.fontWeight = "bold";
+  prevBtn.disabled = effectivePage <= 1;
+  prevBtn.style.opacity = prevBtn.disabled ? "0.5" : "1";
+  prevBtn.onclick = () => { if (!prevBtn.disabled) updateFn(currentPage - 1); };
+  navBox.appendChild(prevBtn);
+
+  if (totalPages === 0) {
+    const zeroBtn = document.createElement("button");
+    zeroBtn.textContent = "0";
+    zeroBtn.disabled = true;
+    zeroBtn.style.opacity = "0.5";
+    zeroBtn.style.margin = "0 3px";
+    navBox.appendChild(zeroBtn);
+  } else if (totalPages <= 3) {
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      btn.style.margin = "0 3px";
+      btn.style.fontWeight = i === currentPage ? "bold" : "normal";
+      btn.style.backgroundColor = i === currentPage ? "#ddd" : "";
+      btn.onclick = () => updateFn(i);
+      navBox.appendChild(btn);
+    }
+  } else {
+    if (currentPage > 2) {
+      const dot = document.createElement("span");
+      dot.textContent = "...";
+      dot.style.margin = "0 5px";
+      navBox.appendChild(dot);
+    }
+
+    if (currentPage > 1) {
+      const prevPageBtn = document.createElement("button");
+      prevPageBtn.textContent = currentPage - 1;
+      prevPageBtn.style.margin = "0 3px";
+      prevPageBtn.onclick = () => updateFn(currentPage - 1);
+      navBox.appendChild(prevPageBtn);
+    }
+
+    const currPageBtn = document.createElement("button");
+    currPageBtn.textContent = currentPage;
+    currPageBtn.style.margin = "0 3px";
+    currPageBtn.style.fontWeight = "bold";
+    currPageBtn.style.backgroundColor = "#ddd";
+    navBox.appendChild(currPageBtn);
+
+    if (currentPage < totalPages) {
+      const nextPageBtn = document.createElement("button");
+      nextPageBtn.textContent = currentPage + 1;
+      nextPageBtn.style.margin = "0 3px";
+      nextPageBtn.onclick = () => updateFn(currentPage + 1);
+      navBox.appendChild(nextPageBtn);
+    }
+
+    if (currentPage < totalPages - 1) {
+      const dot = document.createElement("span");
+      dot.textContent = "...";
+      dot.style.margin = "0 5px";
+      navBox.appendChild(dot);
+    }
+  }
+
+  const nextBtn = document.createElement("button");
+  nextBtn.textContent = "Next";
+  nextBtn.style.margin = "0 5px";
+  nextBtn.style.fontWeight = "bold";
+  nextBtn.disabled = effectivePage === totalPages || totalPages === 0;
+  nextBtn.style.opacity = nextBtn.disabled ? "0.5" : "1";
+  nextBtn.onclick = () => { if (!nextBtn.disabled) updateFn(currentPage + 1); };
+  navBox.appendChild(nextBtn);
+
+  wrapper.appendChild(navBox);
+  container.appendChild(wrapper);
+}
+document.getElementById("stocksearch").addEventListener("keypress", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    document.querySelector("#stockfilter button").click();
+  }
+});
+document.getElementById("stockdate").addEventListener("keypress", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    document.querySelector("#stockfilter button").click();
+  }
+});
+document.getElementById("patientsearch").addEventListener("keypress", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    document.querySelector("#recentfilter button").click();
+  }
+});
+window.addEventListener("DOMContentLoaded", () => {
+  updateStock();
+  updateRecent();
+});
+// Stock Search button
+document.querySelector("#stockfilter button:nth-of-type(1)").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    this.click(); // trigger searchstock()
+  }
+});
+
+// Recent Search button
+document.querySelector("#recentfilter button:nth-of-type(1)").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    this.click(); // trigger searchpatient()
+  }
+});

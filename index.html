@@ -45,7 +45,7 @@
   <h4>Enter Patient Details :</h4>
   <!--for customer details Input -->
   <b>Reciet No. :  </b>
-  <input id="receiptNo" placeholder="Receipt No." />
+  <input id="receiptNo" type="number" placeholder="Receipt No." />
   <b>Patient Name   :  </b>
   <input id="custName" placeholder="Patient Name" /><br>
   <b>Patient Age :  </b>
@@ -92,19 +92,62 @@
   <div id="receiptArea" style="display:none; margin-top:20px; border:1px solid #ccc; padding:10px; background:#f9f9f9;"></div>
   <button onclick="printReceipt()" style="display:none;" id="printBtn">🖨️ Print Receipt</button>
 </section>
+
 <!-- for stock tab -->
 <section id="stock">
   <h1 style="font-family: Algerian; text-align: center;"> <b><u> STOCK </u></b></h1>
+  <div id="stockfilter" style="border:solid 3px black; padding-left:10px;">
+    <h2><center>Search By Medicine Name or Date Of Added</center></h2>
+    Enter Medicine Name:  
+    <input type="text" id="stocksearch" placeholder="Enter Medicine Name">
+    or Enter Date:
+    <input type="date" id="stockdate">
+    <button onclick="searchstock()">Search</button>
+    <button onclick="clearStockFilters()">Cancel</button>
+  </div>
+   <!-- 🔹 Sort dropdown (hidden initially) -->
+  <div id="stockSortContainer" style="display:none; text-align:left; margin:10px 0;">
+    <label for="stockSort">Sort By:</label>
+    <select id="stockSort" onchange="updateStock(true)">
+      <option value="timeDesc">Time (Newest First)</option>
+      <option value="timeAsc">Time (Oldest First)</option>
+      <option value="nameAsc">Name (A → Z)</option>
+      <option value="nameDesc">Name (Z → A)</option>
+    </select>
+  </div>
   <table id="stockTable">
     <tr><th>Sr.No.</th><th>Medicine Name</th><th>Price/Qty.</th><th>Qty.</th><th>Recent Update</th></tr>
   </table>
+  <!-- Pagination container directly below table -->
+  <div id="stockPagination" style="text-align:center; margin-top:10px;"></div>
 </section>
 <!-- for recent 100 bill tab -->
 <section id="recent">
   <H1 style="font-family: Algerian; text-align: center;"><u>RECENT SELLS</u></B></H1>
+  <div id="recentfilter" style="border:solid 3px black; padding-left:10px;">
+    <h2><center>Search By Receipt No. or Patient Name</center></h2>
+    Enter Receipt No. or Patient Name:  
+    <input type="text" id="patientsearch" placeholder="Enter Receipt No. or Patient Name">
+    <button onclick="searchpatient()">Search</button>
+    <button onclick="clearRecentFilters()">Cancel</button>
+  </div>
+  <!-- 🔹 Sort dropdown (hidden initially) -->
+  <div id="recentSortContainer" style="display:none; text-align:left; margin:10px 0;">
+    <label for="recentSort">Sort By:</label>
+    <select id="recentSort" onchange="updateRecent(true)">
+      <option value="timeDesc">Time (Newest First)</option>
+       <option value="timeAsc">Time (Oldest First)</option>
+      <option value="nameAsc">Patient Name (A → Z)</option>
+      <option value="nameDesc">Patient Name (Z → A)</option>
+      <option value="receiptAsc">Receipt No. (Low → High)</option>
+      <option value="receiptDesc">Receipt No. (High → Low)</option>
+    </select>
+  </div>
   <table id="recentTable">
     <tr><th>Receipt No.</th><th>Patient Name</th><th>Date & Time</th><th>Subtotal</th><th>Discount</th><th>Total Paid</th><th>Payment Mode</th><th>View</th></tr>
   </table>
+  <!-- Pagination container directly below table -->
+  <div id="recentPagination" style="text-align:center; margin-top:10px;"></div>
 </section>
 </div>
 <!--for toast message-->
