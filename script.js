@@ -779,7 +779,7 @@ function showHistory(index) {
 // ------------------ GLOBAL STATE ------------------
 let currentStockPage = 1;
 let currentRecentPage = 1;
-const rowsPerPage = 2;
+const rowsPerPage = 10;
 
 let stockSearchActive = false;
 let recentSearchActive = false;
